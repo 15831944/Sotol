@@ -34,8 +34,8 @@ Website: www.ilikebigbits.com
 	* Version 1.2.0 - 2016-03-19 - Add get_thread_name()
 	* Version 1.2.1 - 2016-03-20 - Minor fixes
 	* Version 1.2.2 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
-	* Version 1.2.3 - 2016-05-16 - Log current working directory in loguru::init().
-	* Version 1.2.4 - 2016-05-18 - Custom replacement for -v in loguru::init() by bjoernpollex
+	* Version 1.2.3 - 2016-05-16 - Log current working directory in logger::init().
+	* Version 1.2.4 - 2016-05-18 - Custom replacement for -v in logger::init() by bjoernpollex
 	* Version 1.2.5 - 2016-05-18 - Add ability to print ERROR_CONTEXT of parent thread.
 	* Version 1.2.6 - 2016-05-19 - Bug fix regarding VLOG verbosity argument lacking ().
 	* Version 1.2.7 - 2016-05-23 - Fix PATH_MAX problem.
@@ -43,19 +43,19 @@ Website: www.ilikebigbits.com
 	* Version 1.2.9 - 2016-06-09 - Use a monotonic clock for uptime.
 	* Version 1.3.0 - 2016-07-20 - Fix issues with callback flush/close not being called.
 	* Version 1.3.1 - 2016-07-20 - Add LOG_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
-	* Version 1.3.2 - 2016-07-20 - Add loguru::arguments()
-	* Version 1.4.0 - 2016-09-15 - Semantic versioning + add loguru::create_directories
+	* Version 1.3.2 - 2016-07-20 - Add logger::arguments()
+	* Version 1.4.0 - 2016-09-15 - Semantic versioning + add logger::create_directories
 	* Version 1.4.1 - 2016-09-29 - Customize formating with LOG_FILENAME_WIDTH
 	* Version 1.5.0 - 2016-12-22 - LOG_USE_FMTLIB by kolis and LOG_WITH_FILEABS by scinart
 	* Version 1.5.1 - 2017-08-08 - Terminal colors on Windows 10 thanks to looki
 	* Version 1.6.0 - 2018-01-03 - Add LOG_RTTI and LOG_STACKTRACES settings
-	* Version 1.7.0 - 2018-01-03 - Add ability to turn off the preamble with loguru::g_preamble
+	* Version 1.7.0 - 2018-01-03 - Add ability to turn off the preamble with logger::g_preamble
 	* Version 1.7.1 - 2018-04-05 - Add function get_fatal_handler
 	* Version 1.7.2 - 2018-04-22 - Fix a bug where large file names could cause stack corruption (thanks @ccamporesi)
 	* Version 1.8.0 - 2018-04-23 - Shorten long file names to keep preamble fixed width
 	* Version 1.9.0 - 2018-09-22 - Adjust terminal colors, add LOG_VERBOSE_SCOPE_ENDINGS, add LOG_SCOPE_TIME_PRECISION, add named log levels
 	* Version 2.0.0 - 2018-09-22 - Split loguru.hpp into loguru.hpp and loguru.cpp
-	* Version 2.1.0 - 2019-09-23 - Update fmtlib + add option to loguru::init to NOT set main thread name.
+	* Version 2.1.0 - 2019-09-23 - Update fmtlib + add option to logger::init to NOT set main thread name.
 	* Version 2.2.0 - 2020-07-31 - Replace LOG_CATCH_SIGABRT with struct SignalOptions
 
 # Compiling
@@ -69,10 +69,10 @@ Website: www.ilikebigbits.com
 	#include <loguru.hpp>
 
 	int main(int argc, char* argv[]) {
-		loguru::init(argc, argv);
+		logger::init(argc, argv);
 
 		// Put every log message in "everything.log":
-		loguru::add_file("everything.log", loguru::Append, loguru::Verbosity_MAX);
+		logger::add_file("everything.log", logger::Append, logger::Verbosity_MAX);
 
 		LOG_F(INFO, "The magic number is %d", 42);
 	}
@@ -137,7 +137,7 @@ Website: www.ilikebigbits.com
 #endif
 
 #ifdef LOG_CATCH_SIGABRT
-#error "You are defining LOG_CATCH_SIGABRT. This is for older versions of Loguru. You should now instead set the options passed to loguru::init"
+#error "You are defining LOG_CATCH_SIGABRT. This is for older versions of Loguru. You should now instead set the options passed to logger::init"
 #endif
 
 #ifndef LOG_VERBOSE_SCOPE_ENDINGS
@@ -163,7 +163,7 @@ Website: www.ilikebigbits.com
 #endif
 
 #if defined(LOG_UNSAFE_SIGNAL_HANDLER)
-#error "You are defining LOG_UNSAFE_SIGNAL_HANDLER. This is for older versions of Loguru. You should now instead set the unsafe_signal_handler option when you call loguru::init."
+#error "You are defining LOG_UNSAFE_SIGNAL_HANDLER. This is for older versions of Loguru. You should now instead set the unsafe_signal_handler option when you call logger::init."
 #endif
 
 #if LOG_IMPLEMENTATION
@@ -250,7 +250,7 @@ Website: www.ilikebigbits.com
 
 // --------------------------------------------------------------------
 
-namespace log
+namespace logger
 {
 	// Simple RAII ownership of a char*.
 	class LOG_EXPORT Text
@@ -357,7 +357,7 @@ namespace log
 
 	/* Everything with a verbosity equal or greater than g_stderr_verbosity will be
 	written to stderr. You can set this in code or via the -v argument.
-	Set to loguru::Verbosity_OFF to write nothing to stderr.
+	Set to logger::Verbosity_OFF to write nothing to stderr.
 	Default is 0, i.e. only log ERROR, WARNING and INFO are written to stderr.
 	*/
 	LOG_EXPORT extern Verbosity g_stderr_verbosity;
@@ -438,19 +438,19 @@ namespace log
 		}
 	};
 
-	// Runtime options passed to loguru::init
+	// Runtime options passed to logger::init
 	struct Options
 	{
 		// This allows you to use something else instead of "-v" via verbosity_flag.
 		// Set to nullptr if you don't want Loguru to parse verbosity from the args.
 		const char* verbosity_flag = "-v";
 
-		// loguru::init will set the name of the calling thread to this.
+		// logger::init will set the name of the calling thread to this.
 		// If you don't want Loguru to set the name of the main thread,
 		// set this to nullptr.
-		// NOTE: on SOME platforms loguru::init will only overwrite the thread name
+		// NOTE: on SOME platforms logger::init will only overwrite the thread name
 		// if a thread name has not already been set.
-		// To always set a thread name, use loguru::set_thread_name instead.
+		// To always set a thread name, use logger::set_thread_name instead.
 		const char* main_thread_name = "main thread";
 
 		SignalOptions signal_options;
@@ -465,9 +465,9 @@ namespace log
 			* Main thread name set to "main thread"
 			* Explanation of the preamble (date, thread name, etc) logged
 
-		loguru::init() will look for arguments meant for loguru and remove them.
+		logger::init() will look for arguments meant for loguru and remove them.
 		Arguments meant for loguru are:
-			-v n   Set loguru::g_stderr_verbosity level. Examples:
+			-v n   Set logger::g_stderr_verbosity level. Examples:
 				-v 3        Show verbosity level 3 and lower.
 				-v 0        Only show INFO, WARNING, ERROR, FATAL (default).
 				-v INFO     Only show INFO, WARNING, ERROR, FATAL (default).
@@ -476,9 +476,9 @@ namespace log
 				-v FATAL    Only show FATAL.
 				-v OFF      Turn off logging to stderr.
 
-		Tip: You can set g_stderr_verbosity before calling loguru::init.
+		Tip: You can set g_stderr_verbosity before calling logger::init.
 		That way you can set the default but have the user override it with the -v flag.
-		Note that -v does not affect file logging (see loguru::add_file).
+		Note that -v does not affect file logging (see logger::add_file).
 
 		You can you something other than the -v flag by setting the verbosity_flag option.
 	*/
@@ -500,11 +500,11 @@ namespace log
 	LOG_EXPORT
 		const char* argv0_filename();
 
-	// Returns all arguments given to loguru::init(), but escaped with a single space as separator.
+	// Returns all arguments given to logger::init(), but escaped with a single space as separator.
 	LOG_EXPORT
 		const char* arguments();
 
-	// Returns the path to the current working dir when loguru::init() was called.
+	// Returns the path to the current working dir when logger::init() was called.
 	LOG_EXPORT
 		const char* current_dir();
 
@@ -538,8 +538,8 @@ namespace log
 		Any logging message with a verbosity lower or equal to
 		the given verbosity will be included.
 		The function will create all directories in 'path' if needed.
-		If path starts with a ~, it will be replaced with loguru::home_dir()
-		To stop the file logging, just call loguru::remove_callback(path) with the same path.
+		If path starts with a ~, it will be replaced with logger::home_dir()
+		To stop the file logging, just call logger::remove_callback(path) with the same path.
 	*/
 	LOG_EXPORT
 		bool add_file(const char* path, FileMode mode, Verbosity verbosity);
@@ -738,7 +738,7 @@ namespace log
 	/* Generates a readable stacktrace as a string.
 	   'skip' specifies how many stack frames to skip.
 	   For instance, the default skip (1) means:
-	   don't include the call to loguru::stacktrace in the stack trace. */
+	   don't include the call to logger::stacktrace in the stack trace. */
 	LOG_EXPORT
 		Text stacktrace(int skip = 1);
 
@@ -747,8 +747,8 @@ namespace log
 		For instance, instead of having a stack trace look like this:
 			0x41f541 some_function(std::basic_ofstream<char, std::char_traits<char> >&)
 		You can clean it up with:
-			auto verbose_type_name = loguru::demangle(typeid(std::ofstream).name());
-			loguru::add_stack_cleanup(verbose_type_name.c_str(); "std::ofstream");
+			auto verbose_type_name = logger::demangle(typeid(std::ofstream).name());
+			logger::add_stack_cleanup(verbose_type_name.c_str(); "std::ofstream");
 		So the next time you will instead see:
 			0x41f541 some_function(std::ofstream&)
 
@@ -777,8 +777,8 @@ namespace log
 
 	Usage:
 		printf("%sRed%sGreen%sBold green%sClear again\n",
-			   loguru::terminal_red(), loguru::terminal_green(),
-			   loguru::terminal_bold(), loguru::terminal_reset());
+			   logger::terminal_red(), logger::terminal_green(),
+			   logger::terminal_bold(), logger::terminal_reset());
 
 	If the terminal at hand does not support colors the above output
 	will just not have funky \e[1m things showing.
@@ -910,7 +910,7 @@ namespace log
 		}
 
 		The context is in effect during the scope of the ERROR_CONTEXT.
-		Use loguru::get_error_context() to get the contents of the active error contexts.
+		Use logger::get_error_context() to get the contents of the active error contexts.
 
 		Example result:
 
@@ -923,16 +923,16 @@ namespace log
 		This makes them much faster than logging the value of a variable.
 	*/
 #define ERROR_CONTEXT(descr, data)                                             \
-		const loguru::EcEntryData<loguru::make_ec_type<decltype(data)>::type>      \
+		const logger::EcEntryData<logger::make_ec_type<decltype(data)>::type>      \
 			LOG_ANONYMOUS_VARIABLE(error_context_scope_)(                       \
 				__FILE__, __LINE__, descr, data,                                   \
-				static_cast<loguru::EcEntryData<loguru::make_ec_type<decltype(data)>::type>::Printer>(loguru::ec_to_text) ) // For better error messages
+				static_cast<logger::EcEntryData<logger::make_ec_type<decltype(data)>::type>::Printer>(logger::ec_to_text) ) // For better error messages
 
 	/*
 		#define ERROR_CONTEXT(descr, data)                                 \
 			const auto LOG_ANONYMOUS_VARIABLE(error_context_scope_)(    \
-				loguru::make_ec_entry_lambda(__FILE__, __LINE__, descr,    \
-					[=](){ return loguru::ec_to_text(data); }))
+				logger::make_ec_entry_lambda(__FILE__, __LINE__, descr,    \
+					[=](){ return logger::ec_to_text(data); }))
 	*/
 
 	using EcHandle = const EcEntryBase*;
@@ -940,7 +940,7 @@ namespace log
 	/*
 		Get a light-weight handle to the error context stack on this thread.
 		The handle is valid as long as the current thread has no changes to its error context stack.
-		You can pass the handle to loguru::get_error_context on another thread.
+		You can pass the handle to logger::get_error_context on another thread.
 		This can be very useful for when you have a parent thread spawning several working threads,
 		and you want the error context of the parent thread to get printed (too) when there is an
 		error on the child thread. You can accomplish this thusly:
@@ -948,10 +948,10 @@ namespace log
 		void foo(const char* parameter)
 		{
 			ERROR_CONTEXT("parameter", parameter)
-			const auto parent_ec_handle = loguru::get_thread_ec_handle();
+			const auto parent_ec_handle = logger::get_thread_ec_handle();
 
 			std::thread([=]{
-				loguru::set_thread_name("child thread");
+				logger::set_thread_name("child thread");
 				ERROR_CONTEXT("parent context", parent_ec_handle);
 				dangerous_code();
 			}.join();
@@ -1025,35 +1025,35 @@ namespace log
 
 // LOG_F(2, "Only logged if verbosity is 2 or higher: %d", some_number);
 #define VLOG_F(verbosity, ...)                                                                     \
-	((verbosity) > loguru::current_verbosity_cutoff()) ? (void)0                                   \
-									  : loguru::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
+	((verbosity) > logger::current_verbosity_cutoff()) ? (void)0                                   \
+									  : logger::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 // LOG_F(INFO, "Foo: %d", some_number);
-#define LOG_F(verbosity_name, ...) VLOG_F(loguru::Verbosity_ ## verbosity_name, __VA_ARGS__)
+#define LOG_F(verbosity_name, ...) VLOG_F(logger::Verbosity_ ## verbosity_name, __VA_ARGS__)
 
 #define VLOG_IF_F(verbosity, cond, ...)                                                            \
-	((verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)                          \
+	((verbosity) > logger::current_verbosity_cutoff() || (cond) == false)                          \
 		? (void)0                                                                                  \
-		: loguru::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
+		: logger::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 #define LOG_IF_F(verbosity_name, cond, ...)                                                        \
-	VLOG_IF_F(loguru::Verbosity_ ## verbosity_name, cond, __VA_ARGS__)
+	VLOG_IF_F(logger::Verbosity_ ## verbosity_name, cond, __VA_ARGS__)
 
 #define VLOG_SCOPE_F(verbosity, ...)                                                               \
-	loguru::LogScopeRAII LOG_ANONYMOUS_VARIABLE(error_context_RAII_) =                          \
-	((verbosity) > loguru::current_verbosity_cutoff()) ? loguru::LogScopeRAII() :                  \
-	loguru::LogScopeRAII(verbosity, __FILE__, __LINE__, __VA_ARGS__)
+	logger::LogScopeRAII LOG_ANONYMOUS_VARIABLE(error_context_RAII_) =                          \
+	((verbosity) > logger::current_verbosity_cutoff()) ? logger::LogScopeRAII() :                  \
+	logger::LogScopeRAII(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 // Raw logging - no preamble, no indentation. Slightly faster than full logging.
 #define RAW_VLOG_F(verbosity, ...)                                                                 \
-	((verbosity) > loguru::current_verbosity_cutoff()) ? (void)0                                   \
-									  : loguru::raw_log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
+	((verbosity) > logger::current_verbosity_cutoff()) ? (void)0                                   \
+									  : logger::raw_log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
-#define RAW_LOG_F(verbosity_name, ...) RAW_VLOG_F(loguru::Verbosity_ ## verbosity_name, __VA_ARGS__)
+#define RAW_LOG_F(verbosity_name, ...) RAW_VLOG_F(logger::Verbosity_ ## verbosity_name, __VA_ARGS__)
 
 // Use to book-end a scope. Affects logging on all threads.
 #define LOG_SCOPE_F(verbosity_name, ...)                                                           \
-	VLOG_SCOPE_F(loguru::Verbosity_ ## verbosity_name, __VA_ARGS__)
+	VLOG_SCOPE_F(logger::Verbosity_ ## verbosity_name, __VA_ARGS__)
 
 #define LOG_SCOPE_FUNCTION(verbosity_name) LOG_SCOPE_F(verbosity_name, __func__)
 
@@ -1061,13 +1061,13 @@ namespace log
 // ABORT_F macro. Usage:  ABORT_F("Cause of error: %s", error_str);
 
 // Message is optional
-#define ABORT_F(...) loguru::log_and_abort(0, "ABORT: ", __FILE__, __LINE__, __VA_ARGS__)
+#define ABORT_F(...) logger::log_and_abort(0, "ABORT: ", __FILE__, __LINE__, __VA_ARGS__)
 
 // --------------------------------------------------------------------
 // CHECK_F macros:
 
 #define CHECK_WITH_INFO_F(test, info, ...)                                                         \
-	LOG_PREDICT_TRUE((test) == true) ? (void)0 : loguru::log_and_abort(0, "CHECK FAILED:  " info "  ", __FILE__,      \
+	LOG_PREDICT_TRUE((test) == true) ? (void)0 : logger::log_and_abort(0, "CHECK FAILED:  " info "  ", __FILE__,      \
 													   __LINE__, ##__VA_ARGS__)
 
 /* Checked at runtime too. Will print error, then call fatal_handler (if any), then 'abort'.
@@ -1084,12 +1084,12 @@ namespace log
 		auto val_right = expr_right;                                                               \
 		if (! LOG_PREDICT_TRUE(val_left op val_right))                                          \
 		{                                                                                          \
-			auto str_left = loguru::format_value(val_left);                                        \
-			auto str_right = loguru::format_value(val_right);                                      \
-			auto fail_info = loguru::textprintf("CHECK FAILED:  " LOG_FMT(s) " " LOG_FMT(s) " " LOG_FMT(s) "  (" LOG_FMT(s) " " LOG_FMT(s) " " LOG_FMT(s) ")  ",           \
+			auto str_left = logger::format_value(val_left);                                        \
+			auto str_right = logger::format_value(val_right);                                      \
+			auto fail_info = logger::textprintf("CHECK FAILED:  " LOG_FMT(s) " " LOG_FMT(s) " " LOG_FMT(s) "  (" LOG_FMT(s) " " LOG_FMT(s) " " LOG_FMT(s) ")  ",           \
 				#expr_left, #op, #expr_right, str_left.c_str(), #op, str_right.c_str());           \
-			auto user_msg = loguru::textprintf(__VA_ARGS__);                                       \
-			loguru::log_and_abort(0, fail_info.c_str(), __FILE__, __LINE__,                        \
+			auto user_msg = logger::textprintf(__VA_ARGS__);                                       \
+			logger::log_and_abort(0, fail_info.c_str(), __FILE__, __LINE__,                        \
 			                      LOG_FMT(s), user_msg.c_str());                                         \
 		}                                                                                          \
 	} while (false)
@@ -1309,17 +1309,17 @@ namespace loguru
 
 // usage:  LOG_STREAM(INFO) << "Foo " << std::setprecision(10) << some_value;
 #define VLOG_IF_S(verbosity, cond)                                                                 \
-	((verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)                          \
+	((verbosity) > logger::current_verbosity_cutoff() || (cond) == false)                          \
 		? (void)0                                                                                  \
-		: loguru::Voidify() & loguru::StreamLogger(verbosity, __FILE__, __LINE__)
-#define LOG_IF_S(verbosity_name, cond) VLOG_IF_S(loguru::Verbosity_ ## verbosity_name, cond)
+		: logger::Voidify() & logger::StreamLogger(verbosity, __FILE__, __LINE__)
+#define LOG_IF_S(verbosity_name, cond) VLOG_IF_S(logger::Verbosity_ ## verbosity_name, cond)
 #define VLOG_S(verbosity)              VLOG_IF_S(verbosity, true)
-#define LOG_S(verbosity_name)          VLOG_S(loguru::Verbosity_ ## verbosity_name)
+#define LOG_S(verbosity_name)          VLOG_S(logger::Verbosity_ ## verbosity_name)
 
 // -----------------------------------------------
 // ABORT_S macro. Usage:  ABORT_S() << "Causo of error: " << details;
 
-#define ABORT_S() loguru::Voidify() & loguru::AbortLogger("ABORT: ", __FILE__, __LINE__)
+#define ABORT_S() logger::Voidify() & logger::AbortLogger("ABORT: ", __FILE__, __LINE__)
 
 // -----------------------------------------------
 // CHECK_S macros:
@@ -1327,16 +1327,16 @@ namespace loguru
 #define CHECK_WITH_INFO_S(cond, info)                                                              \
 	LOG_PREDICT_TRUE((cond) == true)                                                            \
 		? (void)0                                                                                  \
-		: loguru::Voidify() & loguru::AbortLogger("CHECK FAILED:  " info "  ", __FILE__, __LINE__)
+		: logger::Voidify() & logger::AbortLogger("CHECK FAILED:  " info "  ", __FILE__, __LINE__)
 
 #define CHECK_S(cond) CHECK_WITH_INFO_S(cond, #cond)
 #define CHECK_NOTNULL_S(x) CHECK_WITH_INFO_S((x) != nullptr, #x " != nullptr")
 
 #define CHECK_OP_S(function_name, expr1, op, expr2)                                                \
-	while (auto error_string = loguru::function_name(#expr1 " " #op " " #expr2,                    \
-													 loguru::referenceable_value(expr1), #op,      \
-													 loguru::referenceable_value(expr2)))          \
-		loguru::AbortLogger(error_string->c_str(), __FILE__, __LINE__)
+	while (auto error_string = logger::function_name(#expr1 " " #op " " #expr2,                    \
+													 logger::referenceable_value(expr1), #op,      \
+													 logger::referenceable_value(expr2)))          \
+		logger::AbortLogger(error_string->c_str(), __FILE__, __LINE__)
 
 #define CHECK_EQ_S(expr1, expr2) CHECK_OP_S(check_EQ_impl, expr1, ==, expr2)
 #define CHECK_NE_S(expr1, expr2) CHECK_OP_S(check_NE_impl, expr1, !=, expr2)
@@ -1354,13 +1354,13 @@ namespace loguru
 #else
 	// Debug logging disabled:
 #define DVLOG_IF_S(verbosity, cond)                                                     \
-		(true || (verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)       \
+		(true || (verbosity) > logger::current_verbosity_cutoff() || (cond) == false)       \
 			? (void)0                                                                       \
-			: loguru::Voidify() & loguru::StreamLogger(verbosity, __FILE__, __LINE__)
+			: logger::Voidify() & logger::StreamLogger(verbosity, __FILE__, __LINE__)
 
-#define DLOG_IF_S(verbosity_name, cond) DVLOG_IF_S(loguru::Verbosity_ ## verbosity_name, cond)
+#define DLOG_IF_S(verbosity_name, cond) DVLOG_IF_S(logger::Verbosity_ ## verbosity_name, cond)
 #define DVLOG_S(verbosity)              DVLOG_IF_S(verbosity, true)
-#define DLOG_S(verbosity_name)          DVLOG_S(loguru::Verbosity_ ## verbosity_name)
+#define DLOG_S(verbosity_name)          DVLOG_S(logger::Verbosity_ ## verbosity_name)
 #endif
 
 #if LOG_DEBUG_CHECKS
@@ -2073,7 +2073,7 @@ namespace loguru
 
 	void shutdown()
 	{
-		VLOG_F(g_internal_verbosity, "loguru::shutdown()");
+		VLOG_F(g_internal_verbosity, "logger::shutdown()");
 		remove_all_callbacks();
 		set_fatal_handler(nullptr);
 		set_verbosity_to_name_callback(nullptr);
@@ -2807,12 +2807,12 @@ namespace loguru
 		std::lock_guard<std::recursive_mutex> lock(s_mutex);
 
 		if (message.verbosity == Verbosity_FATAL) {
-			auto st = loguru::stacktrace(stack_trace_skip + 2);
+			auto st = logger::stacktrace(stack_trace_skip + 2);
 			if (!st.empty()) {
 				RAW_LOG_F(ERROR, "Stack trace:\n" LOG_FMT(s) "", st.c_str());
 			}
 
-			auto ec = loguru::get_error_context();
+			auto ec = logger::get_error_context();
 			if (!ec.empty()) {
 				RAW_LOG_F(ERROR, "" LOG_FMT(s) "", ec.c_str());
 			}
@@ -3091,7 +3091,7 @@ namespace loguru
 	AbortLogger::~AbortLogger() noexcept(false)
 	{
 		auto message = _ss.str();
-		loguru::log_and_abort(1, _expr, _file, _line, LOG_FMT(s), message.c_str());
+		logger::log_and_abort(1, _expr, _file, _line, LOG_FMT(s), message.c_str());
 	}
 
 #endif // LOG_WITH_STREAMS
@@ -3471,10 +3471,9 @@ namespace loguru
 #define DCHECK_LE      DCHECK_LE_S
 #define DCHECK_GT      DCHECK_GT_S
 #define DCHECK_GE      DCHECK_GE_S
-#define VLOG_IS_ON(verbosity) ((verbosity) <= loguru::current_verbosity_cutoff())
+#define VLOG_IS_ON(verbosity) ((verbosity) <= logger::current_verbosity_cutoff())
 
 #endif // LOG_REPLACE_GLOG
 
 #endif // LOG_WITH_STREAMS
 
-#endif // LOG_HAS_DECLARED_STREAMS_HEADER

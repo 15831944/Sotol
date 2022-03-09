@@ -21,6 +21,15 @@
 	#endif
 #endif
 
+// Memory features
+#ifndef CPU_MEMORY_ALIGNMENT
+	#define CPU_MEMORY_ALIGNMENT 4
+#endif 
+
+#ifndef GPU_MEMORY_ALIGNMENT
+	#define GPU_MEMORY_ALIGNMENT 512
+#endif 
+
 // TODO: Vector Intrinsics
 
 // TODO: Compiler features

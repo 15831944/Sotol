@@ -3,7 +3,7 @@
 
 EditorApplication::EditorApplication(int argc, char **argv)
 {
-	log::init(argc, argv);
+	logger::init(argc, argv);
 }
 
 EditorApplication::~EditorApplication()

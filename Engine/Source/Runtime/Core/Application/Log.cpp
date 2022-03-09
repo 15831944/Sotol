@@ -135,7 +135,7 @@
 #endif
 
 
-namespace loguru
+namespace logger
 {
 	using namespace std::chrono;
 
@@ -664,7 +664,7 @@ namespace loguru
 
 	void shutdown()
 	{
-		VLOG_F(g_internal_verbosity, "loguru::shutdown()");
+		VLOG_F(g_internal_verbosity, "logger::shutdown()");
 		remove_all_callbacks();
 		set_fatal_handler(nullptr);
 		set_verbosity_to_name_callback(nullptr);
@@ -1398,12 +1398,12 @@ namespace loguru
 		std::lock_guard<std::recursive_mutex> lock(s_mutex);
 
 		if (message.verbosity == Verbosity_FATAL) {
-			auto st = loguru::stacktrace(stack_trace_skip + 2);
+			auto st = logger::stacktrace(stack_trace_skip + 2);
 			if (!st.empty()) {
 				RAW_LOG_F(ERROR, "Stack trace:\n" LOG_FMT(s) "", st.c_str());
 			}
 
-			auto ec = loguru::get_error_context();
+			auto ec = logger::get_error_context();
 			if (!ec.empty()) {
 				RAW_LOG_F(ERROR, "" LOG_FMT(s) "", ec.c_str());
 			}
@@ -1682,7 +1682,7 @@ namespace loguru
 	AbortLogger::~AbortLogger() noexcept(false)
 	{
 		auto message = _ss.str();
-		loguru::log_and_abort(1, _expr, _file, _line, LOG_FMT(s), message.c_str());
+		logger::log_and_abort(1, _expr, _file, _line, LOG_FMT(s), message.c_str());
 	}
 
 #endif // LOG_WITH_STREAMS
@@ -1896,7 +1896,7 @@ namespace loguru
 	// ----------------------------------------------------------------------------
 
 #ifdef _WIN32
-namespace log {
+namespace logger {
 	void install_signal_handlers(const SignalOptions& signal_options)
 	{
 		(void)signal_options;
@@ -1906,7 +1906,7 @@ namespace log {
 
 #else // _WIN32
 
-namespace log
+namespace logger
 {
 	void write_to_stderr(const char* data, size_t size)
 	{
@@ -2021,7 +2021,7 @@ namespace log
 			CHECK_F(sigaction(SIGTERM, &sig_action, NULL) != -1, "Failed to install handler for SIGTERM");
 		}
 	}
-} // namespace loguru
+} // namespace logger
 
 #endif // _WIN32
 

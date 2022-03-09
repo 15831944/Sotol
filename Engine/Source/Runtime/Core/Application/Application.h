@@ -2,7 +2,7 @@
 
 // Template for the entrypoint of any applications
 
-#include <Core/Core.h>
+#include "../Core.h"
 
 class Application
 {
